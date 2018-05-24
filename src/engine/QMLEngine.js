@@ -214,7 +214,8 @@ class QMLEngine {
     component.$imports = tree.$imports; // for later use
     component.$file = file; // just for debugging
 
-    this.rootObject = component.$createObject(parentComponent);
+    component.object = component.$createObject(parentComponent);
+    this.rootObject = component.object;
     if (this.rootObject.dom) {
       this.domTarget.appendChild(this.rootObject.dom);
     }
@@ -442,6 +443,32 @@ class QMLEngine {
 
     // keep already loaded qmldir files
     this.qmldirsContents[name] = content;
+    this.loadSingletons(content);
+  }
+
+  loadSingletons(content) {
+    /*
+     * This is just PoC and won't be merged like this.
+     *
+     * Two main issues:
+     *  1. It shouldn't use `loadFile`, which is expected to be called once.
+     *  2. It shouldn't pollute QMLBaseObject and should write to local
+     *     contexts instead.
+     *
+     * But the test passes with this PoC.
+     */
+    const QMLBaseObject = QmlWeb.getConstructor("QtQml", "2.0", "QtObject");
+    for (const type in content) {
+      if (!content.hasOwnProperty(type)) continue;
+      for (const name in content[type]) {
+        if (!content[type].hasOwnProperty(name)) continue;
+        const entry = content[type][name];
+        if (!entry.singleton) continue;
+        if (QMLBaseObject.prototype[name]) continue;
+        const component = this.loadFile(entry.url);
+        QMLBaseObject.prototype[name] = component.object;
+      }
+    }
   }
 
   size() {
