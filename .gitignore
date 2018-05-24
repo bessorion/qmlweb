@@ -15,3 +15,10 @@ build/
 .arcconfig
 .eslintcache
 .project
+
+## MS VS
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
